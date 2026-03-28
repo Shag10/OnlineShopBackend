@@ -35,7 +35,7 @@ namespace OnlineShopBackend.Controllers
             sqlConnection.Open();
             sqlCommand.ExecuteNonQuery();
             sqlConnection.Close();
-            return Ok("Inventory saved successfully.");
+            return new JsonResult(new { message = "Inventory saved successfully." });
         }
 
         [HttpDelete]
@@ -57,7 +57,7 @@ namespace OnlineShopBackend.Controllers
             sqlCommand.Parameters.AddWithValue("@ProductId", productId);
             sqlCommand.ExecuteNonQuery();
             sqlConnection.Close();
-            return Ok("Product Id deleted successfully.");
+            return new JsonResult(new { message = "Product Id deleted successfully." });
         }
 
         [HttpGet]
