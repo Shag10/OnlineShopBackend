@@ -38,6 +38,28 @@ namespace OnlineShopBackend.Controllers
             return Ok("Inventory saved successfully.");
         }
 
+        [HttpDelete]
+        public ActionResult DeleteInventoryData(int productId)
+        {
+            SqlConnection sqlConnection = new SqlConnection
+            {
+                ConnectionString = "Server=(localdb)\\MSSQLLocalDB;Database=OnlineShoppingDB;" +
+                "Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;TrustServerCertificate=True;"
+            };
+
+            SqlCommand sqlCommand = new SqlCommand
+            {
+                Connection = sqlConnection,
+                CommandText = "sp_DeleteInventoryData",
+                CommandType = CommandType.StoredProcedure,
+            };
+            sqlConnection.Open();
+            sqlCommand.Parameters.AddWithValue("@ProductId", productId);
+            sqlCommand.ExecuteNonQuery();
+            sqlConnection.Close();
+            return Ok("Product Id deleted successfully.");
+        }
+
         [HttpGet]
         public ActionResult GetInventoryData()
         {
