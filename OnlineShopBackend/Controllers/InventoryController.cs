@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using Microsoft.Data.SqlClient;
 using OnlineShopBackend.Models;
+using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace OnlineShopBackend.Controllers
 {
@@ -34,6 +36,40 @@ namespace OnlineShopBackend.Controllers
             sqlCommand.ExecuteNonQuery();
             sqlConnection.Close();
             return Ok("Inventory saved successfully.");
+        }
+
+        [HttpGet]
+        public ActionResult GetInventoryData()
+        {
+            SqlConnection sqlConnection = new SqlConnection
+            {
+                ConnectionString = "Server=(localdb)\\MSSQLLocalDB;Database=OnlineShoppingDB;" +
+                "Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;TrustServerCertificate=True;"
+            };
+
+            SqlCommand sqlCommand = new SqlCommand
+            {
+                Connection = sqlConnection,
+                CommandText = "sp_GetInventoryData",
+                CommandType = CommandType.StoredProcedure,
+            };
+            sqlConnection.Open();
+            List<InventoryDto> inventoryList = new List<InventoryDto>();
+            using (SqlDataReader reader = sqlCommand.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    InventoryDto inventory = new InventoryDto();
+                    inventory.ProductId = reader.GetInt32(reader.GetOrdinal("ProductId"));
+                    inventory.ProductName = reader.GetString(reader.GetOrdinal("ProductName"));
+                    inventory.StockQuantity = reader.GetInt32(reader.GetOrdinal("StockQuantity"));
+                    inventory.ReorderStock = reader.GetInt32(reader.GetOrdinal("ReorderStock"));
+
+                    inventoryList.Add(inventory);
+                }
+            }
+            sqlConnection.Close();
+            return Ok(JsonConvert.SerializeObject(inventoryList));
         }
     }
 }
