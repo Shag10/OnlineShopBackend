@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using Microsoft.Data.SqlClient;
 using OnlineShopBackend.Models;
-using System.Text.Json.Serialization;
-using Newtonsoft.Json;
+using OnlineShopBackend.Services;
 
 namespace OnlineShopBackend.Controllers
 {
@@ -12,86 +11,32 @@ namespace OnlineShopBackend.Controllers
     [ApiController]
     public class InventoryController : ControllerBase
     {
-        [HttpPost]
-        public ActionResult SaveInventoryData(Inventory inventoryDto)
+        private readonly IInventoryService _service;
+
+        public InventoryController(IInventoryService service)
         {
-            SqlConnection sqlConnection = new SqlConnection
-            {
-                ConnectionString = "Server=(localdb)\\MSSQLLocalDB;Database=OnlineShoppingDB;" +
-                "Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;TrustServerCertificate=True;"
-            };
-
-            SqlCommand sqlCommand = new SqlCommand
-            {
-                Connection = sqlConnection,
-                CommandText = "sp_SaveInventoryData",
-                CommandType = CommandType.StoredProcedure,
-            };
-
-            sqlCommand.Parameters.AddWithValue("@ProductId", inventoryDto.ProductId);
-            sqlCommand.Parameters.AddWithValue("@ProductName", inventoryDto.ProductName);
-            sqlCommand.Parameters.AddWithValue("@StockQuantity", inventoryDto.StockQuantity);
-            sqlCommand.Parameters.AddWithValue("@ReorderStock", inventoryDto.ReorderStock);
-            sqlConnection.Open();
-            sqlCommand.ExecuteNonQuery();
-            sqlConnection.Close();
-            return new JsonResult(new { message = "Inventory saved successfully." });
+            _service = service;
         }
 
-        [HttpDelete]
-        public ActionResult DeleteInventoryData(int productId)
+        [HttpPost]
+        public async Task<ActionResult> SaveInventoryData([FromBody] Inventory inventoryDto)
         {
-            SqlConnection sqlConnection = new SqlConnection
-            {
-                ConnectionString = "Server=(localdb)\\MSSQLLocalDB;Database=OnlineShoppingDB;" +
-                "Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;TrustServerCertificate=True;"
-            };
+            await _service.AddAsync(inventoryDto);
+            return Ok(new { message = "Inventory saved successfully." });
+        }
 
-            SqlCommand sqlCommand = new SqlCommand
-            {
-                Connection = sqlConnection,
-                CommandText = "sp_DeleteInventoryData",
-                CommandType = CommandType.StoredProcedure,
-            };
-            sqlConnection.Open();
-            sqlCommand.Parameters.AddWithValue("@ProductId", productId);
-            sqlCommand.ExecuteNonQuery();
-            sqlConnection.Close();
-            return new JsonResult(new { message = "Product Id deleted successfully." });
+        [HttpDelete("{productId}")]
+        public async Task<ActionResult> DeleteInventoryData(int productId)
+        {
+            await _service.DeleteAsync(productId);
+            return Ok(new { message = "Product Id deleted successfully." });
         }
 
         [HttpGet]
-        public ActionResult GetInventoryData()
+        public async Task<ActionResult<List<InventoryDto>>> GetInventoryData([FromQuery] int? productId)
         {
-            SqlConnection sqlConnection = new SqlConnection
-            {
-                ConnectionString = "Server=(localdb)\\MSSQLLocalDB;Database=OnlineShoppingDB;" +
-                "Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;TrustServerCertificate=True;"
-            };
-
-            SqlCommand sqlCommand = new SqlCommand
-            {
-                Connection = sqlConnection,
-                CommandText = "sp_GetInventoryData",
-                CommandType = CommandType.StoredProcedure,
-            };
-            sqlConnection.Open();
-            List<InventoryDto> inventoryList = new List<InventoryDto>();
-            using (SqlDataReader reader = sqlCommand.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    InventoryDto inventory = new InventoryDto();
-                    inventory.ProductId = reader.GetInt32(reader.GetOrdinal("ProductId"));
-                    inventory.ProductName = reader.GetString(reader.GetOrdinal("ProductName"));
-                    inventory.StockQuantity = reader.GetInt32(reader.GetOrdinal("StockQuantity"));
-                    inventory.ReorderStock = reader.GetInt32(reader.GetOrdinal("ReorderStock"));
-
-                    inventoryList.Add(inventory);
-                }
-            }
-            sqlConnection.Close();
-            return Ok(JsonConvert.SerializeObject(inventoryList));
+            var list = await _service.GetAsync(productId);
+            return Ok(list);
         }
     }
 }

@@ -1,12 +1,28 @@
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+// Preserve PascalCase property names (disable camel-casing) so existing front-end bindings continue to work
+builder.Services.AddControllers().AddJsonOptions(opts =>
+{
+    opts.JsonSerializerOptions.PropertyNamingPolicy = null;
+});
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 // Register Swagger/OpenAPI services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Configure EF Core DbContext with connection string from configuration
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
+                       "Server=(localdb)\\MSSQLLocalDB;Database=OnlineShoppingDB;TrustServerCertificate=True;";
+builder.Services.AddDbContext<OnlineShopBackend.Data.AppDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// Register repository and service
+builder.Services.AddScoped<OnlineShopBackend.Repositories.IInventoryRepository, OnlineShopBackend.Repositories.InventoryRepository>();
+builder.Services.AddScoped<OnlineShopBackend.Services.IInventoryService, OnlineShopBackend.Services.InventoryService>();
 
 builder.Services.AddCors(options =>
 {
