@@ -23,7 +23,8 @@ namespace OnlineShopBackend.Repositories
             await conn.OpenAsync();
             await using var cmd = new SqlCommand("sp_SaveInventoryData", conn)
             {
-                CommandType = CommandType.StoredProcedure
+                CommandType = CommandType.StoredProcedure,
+                CommandTimeout = 30
             };
 
             cmd.Parameters.AddWithValue("@ProductId", inventory.ProductId);
@@ -41,10 +42,11 @@ namespace OnlineShopBackend.Repositories
             {
                 await using var conn = new SqlConnection(cs);
                 await conn.OpenAsync();
-                await using var cmd = new SqlCommand("sp_DeleteInventoryData", conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
+            await using var cmd = new SqlCommand("sp_DeleteInventoryData", conn)
+            {
+                CommandType = CommandType.StoredProcedure,
+                CommandTimeout = 30
+            };
                 cmd.Parameters.AddWithValue("@ProductId", productId);
                 await cmd.ExecuteNonQueryAsync();
             }
@@ -69,7 +71,8 @@ namespace OnlineShopBackend.Repositories
                 await conn.OpenAsync();
                 await using var cmd = new SqlCommand("sp_UpdateInventoryData", conn)
                 {
-                    CommandType = CommandType.StoredProcedure
+                    CommandType = CommandType.StoredProcedure,
+                    CommandTimeout = 30
                 };
                 cmd.Parameters.AddWithValue("@ProductId", inventory.ProductId);
                 cmd.Parameters.AddWithValue("@ProductName", inventory.ProductName ?? string.Empty);
@@ -88,7 +91,7 @@ namespace OnlineShopBackend.Repositories
             }
         }
 
-        public async Task<List<InventoryDto>> GetAsync(int? productId = null)
+        public async Task<List<InventoryDto>> GetAsync(int? productId = null, int? page = null, int? pageSize = null)
         {
             var results = new List<InventoryDto>();
             var cs = _db.Database.GetDbConnection().ConnectionString;
@@ -96,12 +99,21 @@ namespace OnlineShopBackend.Repositories
             await conn.OpenAsync();
             await using var cmd = new SqlCommand("sp_GetInventoryData", conn)
             {
-                CommandType = CommandType.StoredProcedure
+                CommandType = CommandType.StoredProcedure,
+                CommandTimeout = 60
             };
             if (productId.HasValue)
                 cmd.Parameters.AddWithValue("@ProductId", productId.Value);
 
-            await using var reader = await cmd.ExecuteReaderAsync();
+            // If pagination parameters were provided, add them as parameters for the stored procedure
+            // Stored proc can optionally handle @Page and @PageSize to support pagination server-side
+            if (page.HasValue)
+                cmd.Parameters.AddWithValue("@Page", page.Value);
+            if (pageSize.HasValue)
+                cmd.Parameters.AddWithValue("@PageSize", pageSize.Value);
+
+            // Use SequentialAccess and CloseConnection so the reader streams rows and closes the connection when disposed
+            await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess | CommandBehavior.CloseConnection);
             while (await reader.ReadAsync())
             {
                 var dto = new InventoryDto

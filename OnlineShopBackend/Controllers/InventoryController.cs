@@ -25,7 +25,7 @@ namespace OnlineShopBackend.Controllers
             return Ok(new { message = "Inventory saved successfully." });
         }
 
-        [HttpPut("{productId?}")]
+        [HttpPut]
         public async Task<ActionResult> UpdateInventoryData([FromBody] Inventory inventoryDto)
         {
             try
@@ -35,7 +35,7 @@ namespace OnlineShopBackend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Error updatig inventory data.", details = ex.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Error updating inventory data.", details = ex.Message });
             }
         }
 
@@ -59,9 +59,9 @@ namespace OnlineShopBackend.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<InventoryDto>>> GetInventoryData([FromQuery] int? productId)
+        public async Task<ActionResult<List<InventoryDto>>> GetInventoryData([FromQuery] int? productId, [FromQuery] int? page, [FromQuery] int? pageSize)
         {
-            var list = await _service.GetAsync(productId);
+            var list = await _service.GetAsync(productId, page, pageSize);
             return Ok(list);
         }
     }
