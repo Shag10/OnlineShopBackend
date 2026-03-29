@@ -25,11 +25,23 @@ namespace OnlineShopBackend.Controllers
             return Ok(new { message = "Inventory saved successfully." });
         }
 
-        [HttpDelete("{productId}")]
-        public async Task<ActionResult> DeleteInventoryData(int productId)
+        // Accept either DELETE /api/inventory/3 or DELETE /api/inventory?ProductId=3
+        [HttpDelete("{productId?}")]
+        public async Task<ActionResult> DeleteInventoryData([FromRoute] int? productId, [FromQuery(Name = "ProductId")] int? productIdQuery)
         {
-            await _service.DeleteAsync(productId);
-            return Ok(new { message = "Product Id deleted successfully." });
+            var id = productId ?? productIdQuery;
+            if (!id.HasValue)
+                return BadRequest(new { error = "ProductId is required either as route parameter or query string." });
+
+            try
+            {
+                await _service.DeleteAsync(id.Value);
+                return Ok(new { message = "Product Id deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Error deleting inventory data.", details = ex.Message });
+            }
         }
 
         [HttpGet]

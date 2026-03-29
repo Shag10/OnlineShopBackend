@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using OnlineShopBackend.Data;
 using OnlineShopBackend.Models;
 using System.Data.Common;
+using System.Data;
 
 namespace OnlineShopBackend.Repositories
 {
@@ -17,41 +18,62 @@ namespace OnlineShopBackend.Repositories
 
         public async Task AddAsync(Inventory inventory)
         {
-            var conn = _db.Database.GetDbConnection();
+            var cs = _db.Database.GetDbConnection().ConnectionString;
+            await using var conn = new SqlConnection(cs);
             await conn.OpenAsync();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "sp_SaveInventoryData";
-            cmd.CommandType = System.Data.CommandType.StoredProcedure;
-            cmd.Parameters.Add(new SqlParameter("@ProductId", inventory.ProductId));
-            cmd.Parameters.Add(new SqlParameter("@ProductName", inventory.ProductName ?? string.Empty));
-            cmd.Parameters.Add(new SqlParameter("@StockQuantity", inventory.StockQuantity));
-            cmd.Parameters.Add(new SqlParameter("@ReorderStock", inventory.ReorderStock));
+            await using var cmd = new SqlCommand("sp_SaveInventoryData", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.AddWithValue("@ProductId", inventory.ProductId);
+            cmd.Parameters.AddWithValue("@ProductName", inventory.ProductName ?? string.Empty);
+            cmd.Parameters.AddWithValue("@StockQuantity", inventory.StockQuantity);
+            cmd.Parameters.AddWithValue("@ReorderStock", inventory.ReorderStock);
+
             await cmd.ExecuteNonQueryAsync();
         }
 
         public async Task DeleteAsync(int productId)
         {
-            var conn = _db.Database.GetDbConnection();
-            await conn.OpenAsync();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "sp_DeleteInventoryData";
-            cmd.CommandType = System.Data.CommandType.StoredProcedure;
-            cmd.Parameters.Add(new SqlParameter("@ProductId", productId));
-            await cmd.ExecuteNonQueryAsync();
+            var cs = _db.Database.GetDbConnection().ConnectionString;
+            try
+            {
+                await using var conn = new SqlConnection(cs);
+                await conn.OpenAsync();
+                await using var cmd = new SqlCommand("sp_DeleteInventoryData", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.AddWithValue("@ProductId", productId);
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (SqlException)
+            {
+                // Fallback to EF Core delete if stored procedure is not available or fails
+                var entity = await _db.Inventories.FirstOrDefaultAsync(i => i.ProductId == productId);
+                if (entity != null)
+                {
+                    _db.Inventories.Remove(entity);
+                    await _db.SaveChangesAsync();
+                }
+            }
         }
 
         public async Task<List<InventoryDto>> GetAsync(int? productId = null)
         {
             var results = new List<InventoryDto>();
-            var conn = _db.Database.GetDbConnection();
+            var cs = _db.Database.GetDbConnection().ConnectionString;
+            await using var conn = new SqlConnection(cs);
             await conn.OpenAsync();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "sp_GetInventoryData";
-            cmd.CommandType = System.Data.CommandType.StoredProcedure;
+            await using var cmd = new SqlCommand("sp_GetInventoryData", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
             if (productId.HasValue)
-                cmd.Parameters.Add(new SqlParameter("@ProductId", productId.Value));
+                cmd.Parameters.AddWithValue("@ProductId", productId.Value);
 
-            using var reader = await cmd.ExecuteReaderAsync();
+            await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 var dto = new InventoryDto
