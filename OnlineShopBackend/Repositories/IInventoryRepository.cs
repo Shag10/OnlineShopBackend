@@ -6,6 +6,7 @@ namespace OnlineShopBackend.Repositories
     {
         Task AddAsync(Inventory inventory);
         Task DeleteAsync(int productId);
+        Task UpdateAsync(Inventory inventory);
         Task<List<InventoryDto>> GetAsync(int? productId = null);
     }
 }

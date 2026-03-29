@@ -22,6 +22,11 @@ namespace OnlineShopBackend.Services
             return _repo.DeleteAsync(productId);
         }
 
+        public Task UpdateAsync(Inventory inventory)
+        {
+            return _repo.UpdateAsync(inventory);
+        }
+
         public Task<List<InventoryDto>> GetAsync(int? productId = null)
         {
             return _repo.GetAsync(productId);

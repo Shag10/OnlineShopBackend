@@ -60,6 +60,34 @@ namespace OnlineShopBackend.Repositories
             }
         }
 
+        public async Task UpdateAsync(Inventory inventory)
+        {
+            var cs = _db.Database.GetDbConnection().ConnectionString;
+            try
+            {
+                await using var conn = new SqlConnection(cs);
+                await conn.OpenAsync();
+                await using var cmd = new SqlCommand("sp_UpdateInventoryData", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.AddWithValue("@ProductId", inventory.ProductId);
+                cmd.Parameters.AddWithValue("@ProductName", inventory.ProductName ?? string.Empty);
+                cmd.Parameters.AddWithValue("@StockQuantity", inventory.StockQuantity);
+                cmd.Parameters.AddWithValue("@ReorderStock", inventory.ReorderStock);
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (SqlException)
+            {
+                var entity = await _db.Inventories.FirstOrDefaultAsync(i => i.ProductId == inventory.ProductId);
+                if (entity != null)
+                {
+                    _db.Inventories.Update(entity);
+                    await _db.SaveChangesAsync();
+                }
+            }
+        }
+
         public async Task<List<InventoryDto>> GetAsync(int? productId = null)
         {
             var results = new List<InventoryDto>();

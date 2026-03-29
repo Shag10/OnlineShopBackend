@@ -13,8 +13,6 @@ builder.Services.AddControllers()
     })
     .AddFluentValidation(c => c.RegisterValidatorsFromAssemblyContaining<OnlineShopBackend.Validators.InventoryValidator>());
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-// Register Swagger/OpenAPI services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -27,9 +25,6 @@ builder.Services.AddDbContext<OnlineShopBackend.Data.AppDbContext>(options =>
 // Register repository and service
 builder.Services.AddScoped<OnlineShopBackend.Repositories.IInventoryRepository, OnlineShopBackend.Repositories.InventoryRepository>();
 builder.Services.AddScoped<OnlineShopBackend.Services.IInventoryService, OnlineShopBackend.Services.InventoryService>();
-
-// AutoMapper
-builder.Services.AddAutoMapper(typeof(OnlineShopBackend.Mappings.InventoryProfile));
 
 builder.Services.AddCors(options =>
 {

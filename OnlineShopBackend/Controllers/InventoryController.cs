@@ -25,6 +25,20 @@ namespace OnlineShopBackend.Controllers
             return Ok(new { message = "Inventory saved successfully." });
         }
 
+        [HttpPut("{productId?}")]
+        public async Task<ActionResult> UpdateInventoryData([FromBody] Inventory inventoryDto)
+        {
+            try
+            {
+                await _service.UpdateAsync(inventoryDto);
+                return Ok(new { message = "Product Details Updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Error updatig inventory data.", details = ex.Message });
+            }
+        }
+
         // Accept either DELETE /api/inventory/3 or DELETE /api/inventory?ProductId=3
         [HttpDelete("{productId?}")]
         public async Task<ActionResult> DeleteInventoryData([FromRoute] int? productId, [FromQuery(Name = "ProductId")] int? productIdQuery)
@@ -36,7 +50,7 @@ namespace OnlineShopBackend.Controllers
             try
             {
                 await _service.DeleteAsync(id.Value);
-                return Ok(new { message = "Product Id deleted successfully." });
+                return Ok(new { message = "Product deleted successfully." });
             }
             catch (Exception ex)
             {
