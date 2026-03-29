@@ -1,14 +1,18 @@
 using Microsoft.EntityFrameworkCore;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 // Preserve PascalCase property names (disable camel-casing) so existing front-end bindings continue to work
-builder.Services.AddControllers().AddJsonOptions(opts =>
-{
-    opts.JsonSerializerOptions.PropertyNamingPolicy = null;
-});
+builder.Services.AddControllers()
+    .AddJsonOptions(opts =>
+    {
+        opts.JsonSerializerOptions.PropertyNamingPolicy = null;
+    })
+    .AddFluentValidation(c => c.RegisterValidatorsFromAssemblyContaining<OnlineShopBackend.Validators.InventoryValidator>());
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 // Register Swagger/OpenAPI services
 builder.Services.AddEndpointsApiExplorer();
@@ -23,6 +27,9 @@ builder.Services.AddDbContext<OnlineShopBackend.Data.AppDbContext>(options =>
 // Register repository and service
 builder.Services.AddScoped<OnlineShopBackend.Repositories.IInventoryRepository, OnlineShopBackend.Repositories.InventoryRepository>();
 builder.Services.AddScoped<OnlineShopBackend.Services.IInventoryService, OnlineShopBackend.Services.InventoryService>();
+
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(OnlineShopBackend.Mappings.InventoryProfile));
 
 builder.Services.AddCors(options =>
 {
@@ -41,6 +48,14 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    // Ensure DB is created and seed data for development
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<OnlineShopBackend.Data.AppDbContext>();
+        db.Database.EnsureCreated();
+        OnlineShopBackend.Data.DbSeeder.Seed(db);
+    }
 }
 
 app.UseSwagger();

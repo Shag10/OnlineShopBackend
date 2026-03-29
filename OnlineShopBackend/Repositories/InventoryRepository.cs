@@ -1,6 +1,8 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using OnlineShopBackend.Data;
 using OnlineShopBackend.Models;
+using System.Data.Common;
 
 namespace OnlineShopBackend.Repositories
 {
@@ -15,34 +17,54 @@ namespace OnlineShopBackend.Repositories
 
         public async Task AddAsync(Inventory inventory)
         {
-            // If the DB has identity generation, you might ignore ProductId on add
-            _db.Inventories.Add(inventory);
-            await _db.SaveChangesAsync();
+            var conn = _db.Database.GetDbConnection();
+            await conn.OpenAsync();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "sp_SaveInventoryData";
+            cmd.CommandType = System.Data.CommandType.StoredProcedure;
+            cmd.Parameters.Add(new SqlParameter("@ProductId", inventory.ProductId));
+            cmd.Parameters.Add(new SqlParameter("@ProductName", inventory.ProductName ?? string.Empty));
+            cmd.Parameters.Add(new SqlParameter("@StockQuantity", inventory.StockQuantity));
+            cmd.Parameters.Add(new SqlParameter("@ReorderStock", inventory.ReorderStock));
+            await cmd.ExecuteNonQueryAsync();
         }
 
         public async Task DeleteAsync(int productId)
         {
-            var entity = await _db.Inventories.FirstOrDefaultAsync(i => i.ProductId == productId);
-            if (entity != null)
-            {
-                _db.Inventories.Remove(entity);
-                await _db.SaveChangesAsync();
-            }
+            var conn = _db.Database.GetDbConnection();
+            await conn.OpenAsync();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "sp_DeleteInventoryData";
+            cmd.CommandType = System.Data.CommandType.StoredProcedure;
+            cmd.Parameters.Add(new SqlParameter("@ProductId", productId));
+            await cmd.ExecuteNonQueryAsync();
         }
 
         public async Task<List<InventoryDto>> GetAsync(int? productId = null)
         {
-            var query = _db.Inventories.AsQueryable();
+            var results = new List<InventoryDto>();
+            var conn = _db.Database.GetDbConnection();
+            await conn.OpenAsync();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "sp_GetInventoryData";
+            cmd.CommandType = System.Data.CommandType.StoredProcedure;
             if (productId.HasValue)
-                query = query.Where(i => i.ProductId == productId.Value);
+                cmd.Parameters.Add(new SqlParameter("@ProductId", productId.Value));
 
-            return await query.Select(i => new InventoryDto
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
             {
-                ProductId = i.ProductId,
-                ProductName = i.ProductName,
-                StockQuantity = i.StockQuantity,
-                ReorderStock = i.ReorderStock
-            }).ToListAsync();
+                var dto = new InventoryDto
+                {
+                    ProductId = reader.GetInt32(reader.GetOrdinal("ProductId")),
+                    ProductName = reader.GetString(reader.GetOrdinal("ProductName")),
+                    StockQuantity = reader.GetInt32(reader.GetOrdinal("StockQuantity")),
+                    ReorderStock = reader.GetInt32(reader.GetOrdinal("ReorderStock"))
+                };
+                results.Add(dto);
+            }
+
+            return results;
         }
     }
 }
