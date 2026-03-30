@@ -1,3 +1,11 @@
 <Solution>
-  <Project Path="OnlineShopBackend/OnlineShopBackend.csproj" />
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Default" />
+    <BuildType Name="Release" />
+  </Configurations>
+  <Project Path="../../../../../../OneDrive/Desktop/MobileShop/OnlineShopBackend/OnlineShopBackend/OnlineShopBackend.csproj">
+    <BuildType Solution="Default|*" Project="Release" />
+    <Build Solution="Default|*" Project="false" />
+  </Project>
 </Solution>
