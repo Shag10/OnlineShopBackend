@@ -4,7 +4,7 @@
     <BuildType Name="Default" />
     <BuildType Name="Release" />
   </Configurations>
-  <Project Path="../../../../../../OneDrive/Desktop/MobileShop/OnlineShopBackend/OnlineShopBackend/OnlineShopBackend.csproj">
+  <Project Path="../../../../../../Users/shubh/OneDrive/Desktop/MobileShop/OnlineShopBackend/OnlineShopBackend/OnlineShopBackend.csproj">
     <BuildType Solution="Default|*" Project="Release" />
     <Build Solution="Default|*" Project="false" />
   </Project>
