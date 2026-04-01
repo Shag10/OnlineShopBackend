@@ -10,5 +10,6 @@ namespace OnlineShopBackend.Data
         }
 
         public DbSet<Inventory> Inventories { get; set; }
+        public DbSet<CustomerDto> Customers { get; set; }
     }
 }

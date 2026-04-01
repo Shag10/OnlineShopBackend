@@ -26,6 +26,9 @@ builder.Services.AddDbContext<OnlineShopBackend.Data.AppDbContext>(options =>
 builder.Services.AddScoped<OnlineShopBackend.Repositories.IInventoryRepository, OnlineShopBackend.Repositories.InventoryRepository>();
 builder.Services.AddScoped<OnlineShopBackend.Services.IInventoryService, OnlineShopBackend.Services.InventoryService>();
 
+builder.Services.AddScoped<OnlineShopBackend.Repositories.ICustomerRepository, OnlineShopBackend.Repositories.CustomerRepository>();
+builder.Services.AddScoped<OnlineShopBackend.Services.ICustomerService, OnlineShopBackend.Services.CustomerService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", builder =>
