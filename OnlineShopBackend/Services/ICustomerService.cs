@@ -6,6 +6,7 @@ namespace OnlineShopBackend.Services
     {
         Task AddAsync(Customer customer);
         Task DeleteAsync(int customerId);
+        Task UpdateAsync(Customer customer);
         Task<List<CustomerDto>> GetAsync(int? customerId = null, int? page = null, int? pageSize = null);
     }
 }

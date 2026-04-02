@@ -20,6 +20,12 @@ namespace OnlineShopBackend.Services
             return _repo.AddAsync(customer);
         }
 
+        public Task UpdateAsync(Customer customer)
+        {
+            _log.LogInformation("Updating customer {CustomerId}", customer.CustomerId);
+            return _repo.UpdateAsync(customer);
+        }
+
         public Task DeleteAsync(int customerId)
         {
             _log.LogInformation("Deleting customer {CustomerId}", customerId);
@@ -28,7 +34,7 @@ namespace OnlineShopBackend.Services
 
         public Task<List<CustomerDto>> GetAsync(int? customerId = null, int? page = null, int? pageSize = null)
         {
-            _log.LogInformation("Getting inventory list page={Page} size={Size}", page, pageSize);
+            _log.LogInformation("Getting customer list page={Page} size={Size}", page, pageSize);
             return _repo.GetAsync(customerId, page, pageSize);
         }
     }

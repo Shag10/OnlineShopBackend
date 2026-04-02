@@ -63,6 +63,37 @@ namespace OnlineShopBackend.Repositories
             }
         }
 
+        public async Task UpdateAsync(Customer customer)
+        {
+            var cs = _db.Database.GetDbConnection().ConnectionString;
+            try
+            {
+                await using var conn = new SqlConnection(cs);
+                await conn.OpenAsync();
+                await using var cmd = new SqlCommand("sp_UpdateCustomerDetails", conn)
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    CommandTimeout = 30
+                };
+                cmd.Parameters.AddWithValue("@CustomerID", customer.CustomerId);
+                cmd.Parameters.AddWithValue("@CustomerName", customer.CustomerName ?? string.Empty);
+                cmd.Parameters.AddWithValue("@Email", customer.Email ?? string.Empty);
+                cmd.Parameters.AddWithValue("@PhoneNumber", customer.PhoneNumber ?? string.Empty);
+                cmd.Parameters.AddWithValue("@Address", customer.Address ?? string.Empty);
+                cmd.Parameters.AddWithValue("@RegistrationDate", customer.RegistrationDate);
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (SqlException)
+            {
+                var entity = await _db.Customers.FirstOrDefaultAsync(i => i.CustomerId == customer.CustomerId);
+                if (entity != null)
+                {
+                    _db.Customers.Update(entity);
+                    await _db.SaveChangesAsync();
+                }
+            }
+        }
+
         public async Task<List<CustomerDto>> GetAsync(int? customerId = null, int? page = null, int? pageSize = null)
         {
             var results = new List<CustomerDto>();

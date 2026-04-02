@@ -22,8 +22,22 @@ namespace OnlineShopBackend.Controllers
             return Ok(new { message = "Customer Details saved successfully." });
         }
 
+        [HttpPut]
+        public async Task<ActionResult> UpdateCustomerData([FromBody] Customer customerDto)
+        {
+            try
+            {
+                await _service.UpdateAsync(customerDto);
+                return Ok(new { message = "Customer Details Updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Error updating customer details.", details = ex.Message });
+            }
+        }
+
         [HttpDelete("{customerId?}")]
-        public async Task<ActionResult> DeleteCustomerData([FromRoute] int? customerId, [FromQuery(Name = "ProductId")] int? customerIdQuery)
+        public async Task<ActionResult> DeleteCustomerData([FromRoute] int? customerId, [FromQuery(Name = "CustomerId")] int? customerIdQuery)
         {
             var id = customerId ?? customerIdQuery;
             if (!id.HasValue)
@@ -36,7 +50,7 @@ namespace OnlineShopBackend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Error deleting inventory data.", details = ex.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Error deleting customer details.", details = ex.Message });
             }
         }
 
