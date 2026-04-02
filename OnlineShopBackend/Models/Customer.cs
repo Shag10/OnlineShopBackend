@@ -1,14 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Numerics;
 using System.ComponentModel.DataAnnotations.Schema;
-
 
 namespace OnlineShopBackend.Models
 {
-    public class CustomerDto
+    [Table("CustomerDetails")]
+    public class Customer
     {
         #region Properties
 
+        [Key]
         public int CustomerId { get; set; }
         public string? CustomerName { get; set; }
         [EmailAddress]

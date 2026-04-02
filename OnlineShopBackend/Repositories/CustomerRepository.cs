@@ -15,7 +15,7 @@ namespace OnlineShopBackend.Repositories
             _db = db;
         }
 
-        public async Task AddAsync(CustomerDto customer)
+        public async Task AddAsync(Customer customer)
         {
             var cs = _db.Database.GetDbConnection().ConnectionString;
             await using var conn = new SqlConnection(cs);
@@ -29,11 +29,38 @@ namespace OnlineShopBackend.Repositories
             cmd.Parameters.AddWithValue("@CustomerID", customer.CustomerId);
             cmd.Parameters.AddWithValue("@CustomerName", customer.CustomerName ?? string.Empty);
             cmd.Parameters.AddWithValue("@Email", customer.Email ?? string.Empty);
-            cmd.Parameters.AddWithValue("@PhoneNumber", customer.PhoneNumber);
+            cmd.Parameters.AddWithValue("@PhoneNumber", customer.PhoneNumber ?? string.Empty);
             cmd.Parameters.AddWithValue("@Address", customer.Address ?? string.Empty);
             cmd.Parameters.AddWithValue("@RegistrationDate", customer.RegistrationDate);
 
             await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task DeleteAsync(int customerId)
+        {
+            var cs = _db.Database.GetDbConnection().ConnectionString;
+            try
+            {
+                await using var conn = new SqlConnection(cs);
+                await conn.OpenAsync();
+                await using var cmd = new SqlCommand("sp_DeleteCustomerDetails", conn)
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    CommandTimeout = 30
+                };
+                cmd.Parameters.AddWithValue("@CustomerId", customerId);
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (SqlException)
+            {
+                // Fallback to EF Core delete if stored procedure is not available or fails
+                var entity = await _db.Customers.FirstOrDefaultAsync(i => i.CustomerId == customerId);
+                if (entity != null)
+                {
+                    _db.Customers.Remove(entity);
+                    await _db.SaveChangesAsync();
+                }
+            }
         }
 
         public async Task<List<CustomerDto>> GetAsync(int? customerId = null, int? page = null, int? pageSize = null)
