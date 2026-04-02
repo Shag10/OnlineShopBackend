@@ -19,5 +19,11 @@ namespace OnlineShopBackend.Services
             _log.LogInformation("Adding customer {CustomerId}", customer.CustomerId);
             return _repo.AddAsync(customer);
         }
+
+        public Task<List<CustomerDto>> GetAsync(int? customerId = null, int? page = null, int? pageSize = null)
+        {
+            _log.LogInformation("Getting inventory list page={Page} size={Size}", page, pageSize);
+            return _repo.GetAsync(customerId, page, pageSize);
+        }
     }
 }

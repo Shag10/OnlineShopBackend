@@ -21,5 +21,12 @@ namespace OnlineShopBackend.Controllers
             await _service.AddAsync(customerDto);
             return Ok(new { message = "Customer Details saved successfully." });
         }
+
+        [HttpGet]
+        public async Task<ActionResult<List<CustomerDto>>> GetInventoryData([FromQuery] int? customerId, [FromQuery] int? page, [FromQuery] int? pageSize)
+        {
+            var list = await _service.GetAsync(customerId, page, pageSize);
+            return Ok(list);
+        }
     }
 }

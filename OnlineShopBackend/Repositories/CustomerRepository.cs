@@ -35,5 +35,45 @@ namespace OnlineShopBackend.Repositories
 
             await cmd.ExecuteNonQueryAsync();
         }
+
+        public async Task<List<CustomerDto>> GetAsync(int? customerId = null, int? page = null, int? pageSize = null)
+        {
+            var results = new List<CustomerDto>();
+            var cs = _db.Database.GetDbConnection().ConnectionString;
+            await using var conn = new SqlConnection(cs);
+            await conn.OpenAsync();
+            await using var cmd = new SqlCommand("sp_GetCustomerDetails", conn)
+            {
+                CommandType = CommandType.StoredProcedure,
+                CommandTimeout = 60
+            };
+            if (customerId.HasValue)
+                cmd.Parameters.AddWithValue("@CustomerId", customerId.Value);
+
+            // If pagination parameters were provided, add them as parameters for the stored procedure
+            // Stored proc can optionally handle @Page and @PageSize to support pagination server-side
+            if (page.HasValue)
+                cmd.Parameters.AddWithValue("@Page", page.Value);
+            if (pageSize.HasValue)
+                cmd.Parameters.AddWithValue("@PageSize", pageSize.Value);
+
+            // Use SequentialAccess and CloseConnection so the reader streams rows and closes the connection when disposed
+            await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess | CommandBehavior.CloseConnection);
+            while (await reader.ReadAsync())
+            {
+                var dto = new CustomerDto
+                {
+                    CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                    CustomerName = reader.GetString(reader.GetOrdinal("CustomerName")),
+                    Email = reader.GetString(reader.GetOrdinal("Email")),
+                    PhoneNumber = reader.GetString(reader.GetOrdinal("PhoneNumber")),
+                    Address = reader.GetString(reader.GetOrdinal("Address")),
+                    RegistrationDate = reader.GetDateTime(reader.GetOrdinal("RegistrationDate"))
+                };
+                results.Add(dto);
+            }
+
+            return results;
+        }
     }
 }
